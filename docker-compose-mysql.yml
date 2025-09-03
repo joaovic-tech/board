@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.3.0
+    container_name: board-db
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: board_db
+      MYSQL_USER: board_user
+      MYSQL_PASSWORD: board_user_password
+    ports:
+      - "3306:3306"

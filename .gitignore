@@ -40,3 +40,23 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Database ###
+# Arquivos de ambiente (senhas e configurações sensíveis)
+.env
+.env.local
+.env.production
+
+# Logs do MySQL
+database/logs/
+
+# Volumes do Docker (se houver bind mounts locais)
+mysql_data/
+
+# Backups de banco de dados
+*.sql
+backup/
+backups/
+
+# Logs gerais
+*.log
