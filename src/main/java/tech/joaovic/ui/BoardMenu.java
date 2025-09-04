@@ -1,6 +1,7 @@
 package tech.joaovic.ui;
 
 import tech.joaovic.persistence.entity.BoardColumnEntity;
+import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 import tech.joaovic.persistence.entity.BoardEntity;
 import tech.joaovic.persistence.entity.CardEntity;
 import tech.joaovic.service.BoardColumnService;
@@ -10,6 +11,7 @@ import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -167,8 +169,94 @@ public class BoardMenu {
         System.out.println();
     }
     
-    private void moveCard() {
-        System.out.println("Funcionalidade em desenvolvimento: Mover card");
+    private void moveCard() throws SQLException {
+        try (var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            var columnService = new BoardColumnService(connection);
+            
+            // Listar cards disponíveis para movimentação
+            List<CardEntity> cards = cardService.findCardsByBoardId(board.getId());
+            if (cards.isEmpty()) {
+                System.out.println("\n📋 Nenhum card encontrado neste board.");
+                return;
+            }
+            
+            // Filtrar apenas cards que podem ser movidos (não estão em FINAL ou CANCELAMENTO)
+            List<CardEntity> moveableCards = cards.stream()
+                .filter(card -> card.getBoardColumn().getType() != BoardColumnTypeEnum.FINAL &&
+                               card.getBoardColumn().getType() != BoardColumnTypeEnum.CANCELAMENTO)
+                .toList();
+            
+            if (moveableCards.isEmpty()) {
+                System.out.println("\n❌ Nenhum card pode ser movido. Todos os cards estão em colunas finais.");
+                return;
+            }
+            
+            // Mostrar cards disponíveis
+            System.out.println("\n🔄 Cards disponíveis para movimentação:");
+            for (int i = 0; i < moveableCards.size(); i++) {
+                CardEntity card = moveableCards.get(i);
+                String statusIcon = "T".equals(card.getStatus()) ? "✅" : "🚫";
+                System.out.printf("%d - %s [ID: %d] %s (Coluna: %s)\n", 
+                    i + 1, statusIcon, card.getId(), card.getTitle(), card.getBoardColumn().getName());
+            }
+            
+            // Selecionar card
+            System.out.print("\nEscolha o card (número): ");
+            int cardChoice = scanner.nextInt() - 1;
+            
+            if (cardChoice < 0 || cardChoice >= moveableCards.size()) {
+                System.out.println("❌ Opção inválida!");
+                return;
+            }
+            
+            CardEntity selectedCard = moveableCards.get(cardChoice);
+            
+            // Verificar se o card está bloqueado
+            if ("F".equals(selectedCard.getStatus())) {
+                System.out.println("❌ Este card está bloqueado e não pode ser movido!");
+                return;
+            }
+            
+            // Obter opções de movimento válidas
+            List<BoardColumnEntity> validDestinations = columnService.getValidMoveOptions(
+                board.getId(), selectedCard.getBoardColumn());
+            
+            if (validDestinations.isEmpty()) {
+                System.out.println("❌ Não há movimentos válidos para este card.");
+                return;
+            }
+            
+            // Mostrar opções de destino
+            System.out.println("\n🎯 Destinos disponíveis:");
+            for (int i = 0; i < validDestinations.size(); i++) {
+                BoardColumnEntity dest = validDestinations.get(i);
+                String typeDescription = switch (dest.getType()) {
+                    case INICIAL -> "Inicial";
+                    case PENDENTE -> "Em progresso";
+                    case FINAL -> "Finalizada";
+                    case CANCELAMENTO -> "Cancelar card";
+                };
+                System.out.printf("%d - %s (%s)\n", i + 1, dest.getName(), typeDescription);
+            }
+            
+            // Selecionar destino
+            System.out.print("\nEscolha o destino (número): ");
+            int destChoice = scanner.nextInt() - 1;
+            
+            if (destChoice < 0 || destChoice >= validDestinations.size()) {
+                System.out.println("❌ Opção inválida!");
+                return;
+            }
+            
+            BoardColumnEntity targetColumn = validDestinations.get(destChoice);
+            
+            // Executar movimento
+            cardService.moveCard(selectedCard.getId(), targetColumn.getId());
+            
+            System.out.printf("✅ Card '%s' movido para '%s' com sucesso!\n", 
+                selectedCard.getTitle(), targetColumn.getName());
+        }
     }
     
     private void toggleCardBlock() {

@@ -7,6 +7,7 @@ import tech.joaovic.persistence.entity.CardEntity;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 public class CardService {
@@ -38,6 +39,42 @@ public class CardService {
         CardDAO dao = new CardDAO(connection);
         try {
             return dao.findCardsByBoardId(boardId);
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
+    }
+    
+    public Optional<CardEntity> findById(final Long cardId) throws SQLException {
+        CardDAO dao = new CardDAO(connection);
+        try {
+            return dao.findById(cardId);
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
+    }
+    
+    public void moveCard(final Long cardId, final Long newColumnId) throws SQLException {
+        CardDAO cardDAO = new CardDAO(connection);
+        try {
+            // Verificar se o card existe
+            Optional<CardEntity> cardOpt = cardDAO.findById(cardId);
+            if (cardOpt.isEmpty()) {
+                throw new SQLException("Card não encontrado com ID: " + cardId);
+            }
+            
+            CardEntity card = cardOpt.get();
+            
+            // Verificar se o card não está bloqueado
+            if ("F".equals(card.getStatus())) {
+                throw new SQLException("Card está bloqueado e não pode ser movido");
+            }
+            
+            // Atualizar a coluna do card
+            cardDAO.updateColumn(cardId, newColumnId);
+            connection.commit();
+            
         } catch (SQLException e) {
             connection.rollback();
             throw e;

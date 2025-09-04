@@ -98,4 +98,47 @@ public class BoardColumnService {
             throw e;
         }
     }
+    
+    /**
+     * Encontra a próxima coluna válida na sequência do board
+     */
+    public Optional<BoardColumnEntity> findNextColumn(final Long boardId, final int currentLevel) throws SQLException {
+        BoardColumnDAO dao = new BoardColumnDAO(connection);
+        List<BoardColumnEntity> columns = dao.findByBoardId(boardId);
+        
+        return columns.stream()
+            .filter(col -> col.getNivel() == currentLevel + 1)
+            .findFirst();
+    }
+    
+    /**
+     * Verifica se é possível mover um card de uma coluna para outra
+     */
+    public boolean canMoveCard(BoardColumnEntity fromColumn, BoardColumnEntity toColumn) {
+        // Não pode mover de FINAL ou CANCELAMENTO
+        if (fromColumn.getType() == BoardColumnTypeEnum.FINAL || 
+            fromColumn.getType() == BoardColumnTypeEnum.CANCELAMENTO) {
+            return false;
+        }
+        
+        // Pode mover para CANCELAMENTO de qualquer coluna (exceto FINAL)
+        if (toColumn.getType() == BoardColumnTypeEnum.CANCELAMENTO) {
+            return fromColumn.getType() != BoardColumnTypeEnum.FINAL;
+        }
+        
+        // Movimento sequencial: próximo nível
+        return toColumn.getNivel() == fromColumn.getNivel() + 1;
+    }
+    
+    /**
+     * Obtém todas as opções de movimento válidas para um card
+     */
+    public List<BoardColumnEntity> getValidMoveOptions(final Long boardId, final BoardColumnEntity currentColumn) throws SQLException {
+        BoardColumnDAO dao = new BoardColumnDAO(connection);
+        List<BoardColumnEntity> allColumns = dao.findByBoardId(boardId);
+        
+        return allColumns.stream()
+            .filter(col -> canMoveCard(currentColumn, col))
+            .toList();
+    }
 }
