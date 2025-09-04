@@ -12,4 +12,5 @@ public class CardEntity {
     private OffsetDateTime createdAt;
     private OffsetDateTime movedAt;
     private String status;
+    private BoardColumnEntity boardColumn = new BoardColumnEntity();
 }

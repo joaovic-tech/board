@@ -7,23 +7,27 @@ import tech.joaovic.persistence.entity.BoardEntity;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @AllArgsConstructor
 public class BoardDAO {
     private final Connection connection;
 
-    public BoardEntity insert(final BoardEntity entity) throws SQLException {
+    public void insert(final BoardEntity entity) throws SQLException {
         String sql = "INSERT INTO BOARDS (name) VALUES (?);";
-        try (var statement = connection.prepareStatement(sql)) {
+        try (var statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, entity.getName());
             statement.executeUpdate();
-            ResultSet resultSet = statement.getGeneratedKeys();
-            if (statement instanceof StatementImpl impl) {
-                entity.setId(impl.getLastInsertID());
+            
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    entity.setId(generatedKeys.getLong(1));
+                }
             }
         }
-        return entity;
     }
 
     public void delete(final Long id) throws SQLException {
@@ -38,16 +42,32 @@ public class BoardDAO {
         String sql = "SELECT id, name FROM BOARDS WHERE id = ?;";
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
-            statement.executeQuery(sql);
-            ResultSet resultSet = statement.getResultSet();
-            if (resultSet.next()) {
-                BoardEntity entity = new BoardEntity();
-                entity.setId(resultSet.getLong("id"));
-                entity.setName(resultSet.getString("name"));
-                return Optional.of(entity);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    BoardEntity entity = new BoardEntity();
+                    entity.setId(resultSet.getLong("id"));
+                    entity.setName(resultSet.getString("name"));
+                    return Optional.of(entity);
+                }
             }
-
             return Optional.empty();
+        }
+    }
+
+    public List<BoardEntity> findAll() throws SQLException {
+        String sql = "SELECT id, name FROM BOARDS;";
+        try (var statement = connection.prepareStatement(sql)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<BoardEntity> boards = new ArrayList<>();
+                
+                while (resultSet.next()) {
+                    BoardEntity entity = new BoardEntity();
+                    entity.setId(resultSet.getLong("id"));
+                    entity.setName(resultSet.getString("name"));
+                    boards.add(entity);
+                }
+                return boards;
+            }
         }
     }
 
@@ -55,8 +75,9 @@ public class BoardDAO {
         String sql = "SELECT 1 FROM BOARDS WHERE id = ?;";
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
-            statement.executeQuery(sql);
-            return statement.getResultSet().next();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
         }
     }
 }
