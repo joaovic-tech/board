@@ -1,4 +1,5 @@
-# Board - Sistema de Gerenciamento de Tarefas
+# Board - Sistema de Gerenciamento de Tarefas 
+![Template](./template/template.webp)
 
 Sistema de gerenciamento de tarefas tipo Kanban desenvolvido em Java para fins didáticos como parte do desafio da Digital Innovation One (DIO).
 
