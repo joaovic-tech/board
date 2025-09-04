@@ -1,6 +1,6 @@
 - [x] Mover Cards - É fundamental para o fluxo do kanban
-- [ ] Bloquear/Desbloquear - Completa o sistema básico de gestão
-- [ ] Cancelar Cards - Funcionalidade adicional do menu
+- [x] Bloquear/Desbloquear - Completa o sistema básico de gestão
+- [x] Cancelar Cards - Funcionalidade adicional do menu
 - [ ] Boards Customizáveis - Melhoria de UX
 - [ ] Relatórios - Features avançadas
 

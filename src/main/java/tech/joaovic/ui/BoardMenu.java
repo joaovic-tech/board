@@ -55,6 +55,7 @@ public class BoardMenu {
         System.out.println("2 - Listar cards");
         System.out.println("3 - Mover card");
         System.out.println("4 - Bloquear/Desbloquear card");
+        System.out.println("5 - Cancelar card");
         System.out.println("0 - Voltar");
         System.out.print("Opção: ");
     }
@@ -65,6 +66,7 @@ public class BoardMenu {
             case 2 -> listCards();
             case 3 -> moveCard();
             case 4 -> toggleCardBlock();
+            case 5 -> cancelCard();
             case 0 -> System.out.println("Voltando...");
             default -> System.out.println("Opção inválida!");
         }
@@ -339,6 +341,75 @@ public class BoardMenu {
             System.out.printf("   📝 Motivo: %s\n", unblockReason.trim());
         } catch (SQLException e) {
             System.err.printf("❌ Erro ao desbloquear card: %s\n", e.getMessage());
+        }
+    }
+    
+    private void cancelCard() throws SQLException {
+        try (var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            
+            // Listar cards disponíveis para cancelamento
+            List<CardEntity> cards = cardService.findCardsByBoardId(board.getId());
+            if (cards.isEmpty()) {
+                System.out.println("\n📋 Nenhum card encontrado neste board.");
+                return;
+            }
+            
+            // Filtrar cards que podem ser cancelados (não estão em FINAL ou CANCELAMENTO)
+            List<CardEntity> cancelableCards = cards.stream()
+                .filter(card -> card.getBoardColumn().getType() != BoardColumnTypeEnum.FINAL &&
+                               card.getBoardColumn().getType() != BoardColumnTypeEnum.CANCELAMENTO)
+                .toList();
+            
+            if (cancelableCards.isEmpty()) {
+                System.out.println("\n❌ Nenhum card pode ser cancelado. Cards finalizados ou já cancelados não podem ser cancelados.");
+                return;
+            }
+            
+            // Mostrar cards disponíveis para cancelamento
+            System.out.println("\n❌ Cards disponíveis para cancelamento:");
+            for (int i = 0; i < cancelableCards.size(); i++) {
+                CardEntity card = cancelableCards.get(i);
+                String statusIcon = "T".equals(card.getStatus()) ? "✅" : "🚫";
+                System.out.printf("%d - %s [ID: %d] %s (Coluna: %s)\n", 
+                    i + 1, statusIcon, card.getId(), card.getTitle(), card.getBoardColumn().getName());
+            }
+            
+            // Selecionar card
+            System.out.print("\nEscolha o card para cancelar (número): ");
+            int cardChoice = scanner.nextInt() - 1;
+            
+            if (cardChoice < 0 || cardChoice >= cancelableCards.size()) {
+                System.out.println("❌ Opção inválida!");
+                return;
+            }
+            
+            CardEntity selectedCard = cancelableCards.get(cardChoice);
+            
+            // Verificar se o card está bloqueado
+            if ("F".equals(selectedCard.getStatus())) {
+                System.out.println("❌ Este card está bloqueado e não pode ser cancelado!");
+                return;
+            }
+            
+            // Confirmar cancelamento
+            System.out.printf("\n⚠️  Tem certeza que deseja cancelar o card '%s'? (s/N): ", selectedCard.getTitle());
+            scanner.nextLine(); // limpar buffer
+            String confirmation = scanner.nextLine().toLowerCase();
+            
+            if (!"s".equals(confirmation) && !"sim".equals(confirmation)) {
+                System.out.println("❌ Cancelamento abortado pelo usuário.");
+                return;
+            }
+            
+            // Executar cancelamento
+            try {
+                cardService.cancelCard(selectedCard.getId());
+                System.out.printf("✅ Card '%s' foi cancelado com sucesso!\n", selectedCard.getTitle());
+                System.out.println("   📝 O card foi movido para a coluna de cancelamento.");
+            } catch (SQLException e) {
+                System.err.printf("❌ Erro ao cancelar card: %s\n", e.getMessage());
+            }
         }
     }
     

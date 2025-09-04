@@ -2,6 +2,8 @@ package tech.joaovic.service;
 
 import lombok.AllArgsConstructor;
 import tech.joaovic.persistence.dao.CardDAO;
+import tech.joaovic.persistence.entity.BoardColumnEntity;
+import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 import tech.joaovic.persistence.entity.CardEntity;
 
 import java.sql.Connection;
@@ -73,6 +75,48 @@ public class CardService {
             
             // Atualizar a coluna do card
             cardDAO.updateColumn(cardId, newColumnId);
+            connection.commit();
+            
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
+    }
+    
+    public void cancelCard(final Long cardId) throws SQLException {
+        CardDAO cardDAO = new CardDAO(connection);
+        try {
+            // Verificar se o card existe
+            Optional<CardEntity> cardOpt = cardDAO.findById(cardId);
+            if (cardOpt.isEmpty()) {
+                throw new SQLException("Card não encontrado com ID: " + cardId);
+            }
+            
+            CardEntity card = cardOpt.get();
+            BoardColumnEntity currentColumn = card.getBoardColumn();
+            
+            // Verificar se o card não está bloqueado
+            if ("F".equals(card.getStatus())) {
+                throw new SQLException("Card está bloqueado e não pode ser cancelado");
+            }
+            
+            // Verificar se o card não está em coluna FINAL (não pode ser cancelado)
+            if (currentColumn.getType() == BoardColumnTypeEnum.FINAL) {
+                throw new SQLException("Cards finalizados não podem ser cancelados");
+            }
+            
+            // Verificar se o card já está cancelado
+            if (currentColumn.getType() == BoardColumnTypeEnum.CANCELAMENTO) {
+                throw new SQLException("Card já está cancelado");
+            }
+            
+            // Buscar a coluna de cancelamento do board
+            Long boardId = currentColumn.getBoard().getId();
+            BoardColumnService columnService = new BoardColumnService(connection);
+            BoardColumnEntity cancelColumn = columnService.findCancelColumnByBoardId(boardId);
+            
+            // Mover o card para a coluna de cancelamento
+            cardDAO.updateColumn(cardId, cancelColumn.getId());
             connection.commit();
             
         } catch (SQLException e) {
