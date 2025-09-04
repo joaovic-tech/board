@@ -29,7 +29,7 @@ public class BoardService {
     
     public void create(final BoardEntity entity) throws SQLException {
         // Método compatível com implementação atual - cria board com estrutura padrão
-        List<String> defaultPendingColumns = List.of("Em Andamento", "Concluída");
+        List<String> defaultPendingColumns = List.of("Em Andamento");
         create(entity, defaultPendingColumns);
     }
     

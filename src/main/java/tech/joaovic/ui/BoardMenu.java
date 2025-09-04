@@ -7,6 +7,7 @@ import tech.joaovic.persistence.entity.CardEntity;
 import tech.joaovic.service.BlockService;
 import tech.joaovic.service.BoardColumnService;
 import tech.joaovic.service.CardService;
+import tech.joaovic.service.ReportService;
 
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +57,9 @@ public class BoardMenu {
         System.out.println("3 - Mover card");
         System.out.println("4 - Bloquear/Desbloquear card");
         System.out.println("5 - Cancelar card");
+        System.out.println("6 - Relatório de bloqueios");
+        System.out.println("7 - Relatório de movimentações");
+        System.out.println("8 - Relatório de tempo de vida");
         System.out.println("0 - Voltar");
         System.out.print("Opção: ");
     }
@@ -67,6 +71,9 @@ public class BoardMenu {
             case 3 -> moveCard();
             case 4 -> toggleCardBlock();
             case 5 -> cancelCard();
+            case 6 -> showBlockReport();
+            case 7 -> showMovementReport();
+            case 8 -> showLifetimeReport();
             case 0 -> System.out.println("Voltando...");
             default -> System.out.println("Opção inválida!");
         }
@@ -410,6 +417,39 @@ public class BoardMenu {
             } catch (SQLException e) {
                 System.err.printf("❌ Erro ao cancelar card: %s\n", e.getMessage());
             }
+        }
+    }
+    
+    private void showBlockReport() throws SQLException {
+        try (var connection = getConnection()) {
+            var reportService = new ReportService(connection);
+            reportService.generateBlockReport(board.getId());
+            
+            System.out.println("\n\n🖱️  Pressione Enter para continuar...");
+            scanner.nextLine();
+            scanner.nextLine();
+        }
+    }
+    
+    private void showMovementReport() throws SQLException {
+        try (var connection = getConnection()) {
+            var reportService = new ReportService(connection);
+            reportService.generateMovementReport(board.getId());
+            
+            System.out.println("\n\n🖱️  Pressione Enter para continuar...");
+            scanner.nextLine();
+            scanner.nextLine();
+        }
+    }
+    
+    private void showLifetimeReport() throws SQLException {
+        try (var connection = getConnection()) {
+            var reportService = new ReportService(connection);
+            reportService.generateLifetimeReport(board.getId());
+            
+            System.out.println("\n\n🖱️  Pressione Enter para continuar...");
+            scanner.nextLine();
+            scanner.nextLine();
         }
     }
     

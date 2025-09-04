@@ -1,16 +1,8 @@
-- [x] Mover Cards - É fundamental para o fluxo do kanban
-- [x] Bloquear/Desbloquear - Completa o sistema básico de gestão
-- [x] Cancelar Cards - Funcionalidade adicional do menu
-- [ ] Boards Customizáveis - Melhoria de UX
-- [ ] Relatórios - Features avançadas
+# Documentação do projeto
 
----
-
-# Documentação do projeto (o que entendi)
-
-| Esboço da aplicação                                   | Diagrama de entidade                 |
-|-------------------------------------------------------|--------------------------------------|
-| ![Esboço da aplicação](./template/desenho.drawio.svg) | ![Diagrama](./template/board_db.png) |
+| Diagrama                             |
+|--------------------------------------|
+| ![Diagrama](./template/board_db.png) |
 
 ---
 

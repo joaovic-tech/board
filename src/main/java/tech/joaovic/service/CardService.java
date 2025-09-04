@@ -2,9 +2,11 @@ package tech.joaovic.service;
 
 import lombok.AllArgsConstructor;
 import tech.joaovic.persistence.dao.CardDAO;
+import tech.joaovic.persistence.dao.CardMovementDAO;
 import tech.joaovic.persistence.entity.BoardColumnEntity;
 import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 import tech.joaovic.persistence.entity.CardEntity;
+import tech.joaovic.persistence.entity.CardMovementEntity;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -59,6 +61,9 @@ public class CardService {
     
     public void moveCard(final Long cardId, final Long newColumnId) throws SQLException {
         CardDAO cardDAO = new CardDAO(connection);
+        CardMovementDAO movementDAO = new CardMovementDAO(connection);
+        BoardColumnService columnService = new BoardColumnService(connection);
+        
         try {
             // Verificar se o card existe
             Optional<CardEntity> cardOpt = cardDAO.findById(cardId);
@@ -67,11 +72,25 @@ public class CardService {
             }
             
             CardEntity card = cardOpt.get();
+            BoardColumnEntity currentColumn = card.getBoardColumn();
             
             // Verificar se o card não está bloqueado
             if ("F".equals(card.getStatus())) {
                 throw new SQLException("Card está bloqueado e não pode ser movido");
             }
+            
+            // Buscar a nova coluna
+            Optional<BoardColumnEntity> newColumnOpt = columnService.findById(newColumnId);
+            if (newColumnOpt.isEmpty()) {
+                throw new SQLException("Coluna de destino não encontrada com ID: " + newColumnId);
+            }
+            
+            // Registrar movimento no histórico
+            CardMovementEntity movement = new CardMovementEntity();
+            movement.getCard().setId(cardId);
+            movement.setFromColumn(currentColumn);
+            movement.setToColumn(newColumnOpt.get());
+            movementDAO.insert(movement);
             
             // Atualizar a coluna do card
             cardDAO.updateColumn(cardId, newColumnId);

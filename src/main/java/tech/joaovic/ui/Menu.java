@@ -5,9 +5,12 @@ import tech.joaovic.service.BoardService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
 
 import static tech.joaovic.persistence.config.ConnectionConfig.getConnection;
 
@@ -36,6 +39,8 @@ public class Menu {
 
     private void createBoard() throws SQLException {
         scanner.nextLine();
+        
+        // Solicitar nome do board
         System.out.print("Informe o nome do board: ");
         String name = scanner.nextLine();
 
@@ -43,14 +48,110 @@ public class Menu {
             System.out.println("Nome do board não pode estar vazio!");
             return;
         }
+        
+        // Perguntar se deseja customizar as colunas
+        System.out.print("\nDeseja customizar as colunas do board? (s/N): ");
+        String customizeChoice = scanner.nextLine().toLowerCase();
+        
+        List<String> pendingColumnNames;
+        if ("s".equals(customizeChoice) || "sim".equals(customizeChoice)) {
+            pendingColumnNames = createCustomColumns();
+        } else {
+            // Usar colunas padrão
+            pendingColumnNames = List.of("Em Andamento", "Concluída");
+        }
+        
+        // Mostrar resumo do board que será criado
+        displayBoardSummary(name.trim(), pendingColumnNames);
+        
+        // Confirmar criação
+        System.out.print("\nConfirmar criação do board? (s/N): ");
+        String confirmation = scanner.nextLine().toLowerCase();
+        
+        if (!"s".equals(confirmation) && !"sim".equals(confirmation)) {
+            System.out.println("❌ Criação do board cancelada.");
+            return;
+        }
 
+        // Criar o board
         BoardEntity boardEntity = new BoardEntity();
         boardEntity.setName(name.trim());
+        
         try(Connection connection = getConnection()){
             BoardService service = new BoardService(connection);
-            service.create(boardEntity);
-            System.out.println("Board criado com sucesso!");
+            service.create(boardEntity, pendingColumnNames);
+            System.out.println("✅ Board criado com sucesso!");
         }
+    }
+    
+    private List<String> createCustomColumns() {
+        List<String> columnNames = new ArrayList<>();
+        Set<String> usedNames = new HashSet<>();
+        
+        // Solicitar número de colunas pendentes
+        int numPendingColumns;
+        do {
+            System.out.print("\nQuantas colunas pendentes deseja? (mínimo 1, máximo 8): ");
+            numPendingColumns = scanner.nextInt();
+            scanner.nextLine(); // limpar buffer
+            
+            if (numPendingColumns < 1 || numPendingColumns > 8) {
+                System.out.println("❌ Número inválido! Deve estar entre 1 e 8.");
+            }
+        } while (numPendingColumns < 1 || numPendingColumns > 8);
+        
+        // Solicitar nome de cada coluna pendente
+        System.out.println("\n📝 Nomeando as colunas pendentes:");
+        for (int i = 1; i <= numPendingColumns; i++) {
+            String columnName;
+            do {
+                System.out.printf("   %d. Nome da %dª coluna pendente: ", i, i);
+                columnName = scanner.nextLine().trim();
+                
+                if (columnName.isEmpty()) {
+                    System.out.println("   ❌ Nome não pode estar vazio!");
+                    continue;
+                }
+                
+                if (usedNames.contains(columnName.toLowerCase())) {
+                    System.out.println("   ❌ Nome já utilizado! Escolha um nome diferente.");
+                    continue;
+                }
+                
+                // Verificar se não conflita com nomes reservados
+                String lowerName = columnName.toLowerCase();
+                if (lowerName.equals("inicial") || lowerName.equals("finalizada") || 
+                    lowerName.equals("cancelada") || lowerName.equals("cancelamento")) {
+                    System.out.println("   ❌ Nome reservado! Use um nome diferente.");
+                    continue;
+                }
+                
+                break;
+            } while (true);
+            
+            columnNames.add(columnName);
+            usedNames.add(columnName.toLowerCase());
+        }
+        
+        return columnNames;
+    }
+    
+    private void displayBoardSummary(String boardName, List<String> pendingColumnNames) {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("📊 RESUMO DO BOARD QUE SERÁ CRIADO");
+        System.out.println("=".repeat(50));
+        System.out.printf("📌 Nome: %s\n", boardName);
+        System.out.printf("📂 Total de colunas: %d\n", pendingColumnNames.size() + 3); // +3 para inicial, final, cancelamento
+        System.out.println("\n🔄 Estrutura das colunas:");
+        System.out.println("   1. 📥 Inicial");
+        
+        for (int i = 0; i < pendingColumnNames.size(); i++) {
+            System.out.printf("   %d. ⚡ %s\n", i + 2, pendingColumnNames.get(i));
+        }
+        
+        System.out.printf("   %d. ✅ Finalizada\n", pendingColumnNames.size() + 2);
+        System.out.printf("   %d. ❌ Cancelada\n", pendingColumnNames.size() + 3);
+        System.out.println("=".repeat(50));
     }
 
     private List<BoardEntity> selectBoard(BoardService service) throws SQLException {

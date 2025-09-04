@@ -11,6 +11,7 @@ public class BlockEntity {
     private OffsetDateTime blockedAt;
     private String unblockedReason;
     private OffsetDateTime unblockAt;
+    private String user;
     private CardEntity card = new CardEntity();
 
 }
