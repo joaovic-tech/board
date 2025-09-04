@@ -4,6 +4,7 @@ import tech.joaovic.persistence.entity.BoardColumnEntity;
 import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 import tech.joaovic.persistence.entity.BoardEntity;
 import tech.joaovic.persistence.entity.CardEntity;
+import tech.joaovic.service.BlockService;
 import tech.joaovic.service.BoardColumnService;
 import tech.joaovic.service.CardService;
 
@@ -259,8 +260,86 @@ public class BoardMenu {
         }
     }
     
-    private void toggleCardBlock() {
-        System.out.println("Funcionalidade em desenvolvimento: Bloquear/Desbloquear card");
+    private void toggleCardBlock() throws SQLException {
+        try (var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            var blockService = new BlockService(connection);
+            
+            // Listar todos os cards do board
+            List<CardEntity> cards = cardService.findCardsByBoardId(board.getId());
+            if (cards.isEmpty()) {
+                System.out.println("\n📋 Nenhum card encontrado neste board.");
+                return;
+            }
+            
+            // Mostrar cards disponíveis com status
+            System.out.println("\n🔐 Gerenciar bloqueio de cards:");
+            for (int i = 0; i < cards.size(); i++) {
+                CardEntity card = cards.get(i);
+                String statusText = "T".equals(card.getStatus()) ? "🔓 Desbloqueado" : "🔒 Bloqueado";
+                System.out.printf("%d - [ID: %d] %s - %s (Coluna: %s)\n", 
+                    i + 1, card.getId(), card.getTitle(), statusText, card.getBoardColumn().getName());
+            }
+            
+            // Selecionar card
+            System.out.print("\nEscolha o card (número): ");
+            int cardChoice = scanner.nextInt() - 1;
+            
+            if (cardChoice < 0 || cardChoice >= cards.size()) {
+                System.out.println("❌ Opção inválida!");
+                return;
+            }
+            
+            CardEntity selectedCard = cards.get(cardChoice);
+
+            if ("T".equals(selectedCard.getStatus())) {
+                blockCard(blockService, selectedCard);
+            } else {
+                unblockCard(blockService, selectedCard);
+            }
+        }
+    }
+    
+    private void blockCard(BlockService blockService, CardEntity card) throws SQLException {
+        scanner.nextLine(); // limpar buffer
+        
+        System.out.printf("\n🔒 Bloqueando card: %s\n", card.getTitle());
+        System.out.print("Informe o motivo do bloqueio: ");
+        String blockReason = scanner.nextLine();
+        
+        if (blockReason.trim().isEmpty()) {
+            System.out.println("❌ Motivo do bloqueio é obrigatório!");
+            return;
+        }
+        
+        try {
+            blockService.blockCard(card.getId(), blockReason.trim());
+            System.out.printf("✅ Card '%s' foi bloqueado com sucesso!\n", card.getTitle());
+            System.out.printf("   📝 Motivo: %s\n", blockReason.trim());
+        } catch (SQLException e) {
+            System.err.printf("❌ Erro ao bloquear card: %s\n", e.getMessage());
+        }
+    }
+    
+    private void unblockCard(BlockService blockService, CardEntity card) throws SQLException {
+        scanner.nextLine(); // limpar buffer
+        
+        System.out.printf("\n🔓 Desbloqueando card: %s\n", card.getTitle());
+        System.out.print("Informe o motivo do desbloqueio: ");
+        String unblockReason = scanner.nextLine();
+        
+        if (unblockReason.trim().isEmpty()) {
+            System.out.println("❌ Motivo do desbloqueio é obrigatório!");
+            return;
+        }
+        
+        try {
+            blockService.unblockCard(card.getId(), unblockReason.trim());
+            System.out.printf("✅ Card '%s' foi desbloqueado com sucesso!\n", card.getTitle());
+            System.out.printf("   📝 Motivo: %s\n", unblockReason.trim());
+        } catch (SQLException e) {
+            System.err.printf("❌ Erro ao desbloquear card: %s\n", e.getMessage());
+        }
     }
     
     private void handleError(SQLException e) {

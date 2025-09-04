@@ -134,4 +134,13 @@ public class CardDAO {
             statement.executeUpdate();
         }
     }
+    
+    public void updateStatus(final Long cardId, final String status) throws SQLException {
+        String sql = "UPDATE CARDS SET status = ? WHERE id = ?";
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status);
+            statement.setLong(2, cardId);
+            statement.executeUpdate();
+        }
+    }
 }
