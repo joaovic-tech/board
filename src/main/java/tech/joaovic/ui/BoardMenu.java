@@ -7,8 +7,11 @@ import tech.joaovic.service.BoardColumnService;
 import tech.joaovic.service.CardService;
 
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import static tech.joaovic.persistence.config.ConnectionConfig.getConnection;
 
@@ -104,8 +107,64 @@ public class BoardMenu {
         return card;
     }
     
-    private void listCards() {
-        System.out.println("Funcionalidade em desenvolvimento: Listar cards");
+    private void listCards() throws SQLException {
+        try (var connection = getConnection()) {
+            var cardService = new CardService(connection);
+            var columnService = new BoardColumnService(connection);
+            
+            List<CardEntity> cards = cardService.findCardsByBoardId(board.getId());
+            List<BoardColumnEntity> columns = columnService.findByBoardId(board.getId());
+            
+            if (cards.isEmpty()) {
+                System.out.println("\n📋 Nenhum card encontrado neste board.");
+                return;
+            }
+            
+            displayBoardStructure(cards, columns);
+        }
+    }
+    
+    private void displayBoardStructure(List<CardEntity> cards, List<BoardColumnEntity> columns) {
+        System.out.printf("\n📊 Board: %s\n", board.getName());
+        System.out.println("=" .repeat(60));
+        
+        // Agrupar cards por coluna
+        Map<Long, List<CardEntity>> cardsByColumn = cards.stream()
+            .collect(Collectors.groupingBy(card -> card.getBoardColumn().getId()));
+        
+        // Exibir cada coluna com seus cards
+        columns.forEach(column -> displayColumn(column, cardsByColumn.get(column.getId())));
+    }
+    
+    private void displayColumn(BoardColumnEntity column, List<CardEntity> columnCards) {
+        String columnHeader = String.format("📂 %s (%s)", column.getName(), column.getType().name());
+        System.out.println("\n" + columnHeader);
+        System.out.println("-".repeat(columnHeader.length()));
+        
+        if (columnCards == null || columnCards.isEmpty()) {
+            System.out.println("   (vazia)");
+            return;
+        }
+        
+        columnCards.forEach(this::displayCard);
+    }
+    
+    private void displayCard(CardEntity card) {
+        String statusIcon = "T".equals(card.getStatus()) ? "✅" : "🚫";
+        String createdAt = card.getCreatedAt() != null 
+            ? card.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            : "N/A";
+            
+        System.out.printf("   %s [ID: %d] %s\n", statusIcon, card.getId(), card.getTitle());
+        System.out.printf("      📝 %s\n", card.getDescription());
+        System.out.printf("      🕐 Criado em: %s\n", createdAt);
+        
+        if (card.getMovedAt() != null) {
+            String movedAt = card.getMovedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            System.out.printf("      🔄 Última movimentação: %s\n", movedAt);
+        }
+        
+        System.out.println();
     }
     
     private void moveCard() {

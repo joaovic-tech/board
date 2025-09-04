@@ -6,6 +6,7 @@ import tech.joaovic.persistence.entity.CardEntity;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 @AllArgsConstructor
 public class CardService {
@@ -27,6 +28,16 @@ public class CardService {
         CardDAO dao = new CardDAO(connection);
         try {
             return dao.countCardsByBoardId(boardId);
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        }
+    }
+    
+    public List<CardEntity> findCardsByBoardId(final Long boardId) throws SQLException {
+        CardDAO dao = new CardDAO(connection);
+        try {
+            return dao.findCardsByBoardId(boardId);
         } catch (SQLException e) {
             connection.rollback();
             throw e;

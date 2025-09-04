@@ -2,11 +2,15 @@ package tech.joaovic.persistence.dao;
 
 import lombok.AllArgsConstructor;
 import tech.joaovic.persistence.entity.CardEntity;
+import tech.joaovic.persistence.entity.BoardColumnEntity;
+import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 public class CardDAO {
@@ -37,6 +41,47 @@ public class CardDAO {
                     return resultSet.getInt(1);
                 }
                 return 0;
+            }
+        }
+    }
+    
+    public List<CardEntity> findCardsByBoardId(final Long boardId) throws SQLException {
+        String sql = "SELECT c.id, c.title, c.description, c.created_at, c.moved_at, c.status, " +
+                    "bc.id as column_id, bc.type, bc.custom_name, bc.nivel " +
+                    "FROM CARDS c " +
+                    "INNER JOIN BOARDS_COLUMN bc ON c.board_column_id = bc.id " +
+                    "WHERE bc.board_id = ? " +
+                    "ORDER BY bc.nivel, c.created_at";
+        
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, boardId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<CardEntity> cards = new ArrayList<>();
+                
+                while (resultSet.next()) {
+                    CardEntity card = new CardEntity();
+                    card.setId(resultSet.getLong("id"));
+                    card.setTitle(resultSet.getString("title"));
+                    card.setDescription(resultSet.getString("description"));
+                    card.setCreatedAt(resultSet.getTimestamp("created_at") != null 
+                        ? resultSet.getTimestamp("created_at").toLocalDateTime().atOffset(java.time.ZoneOffset.UTC) 
+                        : null);
+                    card.setMovedAt(resultSet.getTimestamp("moved_at") != null 
+                        ? resultSet.getTimestamp("moved_at").toLocalDateTime().atOffset(java.time.ZoneOffset.UTC) 
+                        : null);
+                    card.setStatus(resultSet.getString("status"));
+                    
+                    // Preencher informações da coluna
+                    BoardColumnEntity column = new BoardColumnEntity();
+                    column.setId(resultSet.getLong("column_id"));
+                    column.setType(BoardColumnTypeEnum.valueOf(resultSet.getString("type")));
+                    column.setName(resultSet.getString("custom_name"));
+                    column.setNivel(resultSet.getInt("nivel"));
+                    
+                    card.setBoardColumn(column);
+                    cards.add(card);
+                }
+                return cards;
             }
         }
     }
