@@ -10,7 +10,8 @@ import java.util.List;
 @Data
 public class BoardColumnEntity {
     private Long id;
-    private BoardColumnNameEnum name;
+    private BoardColumnTypeEnum type;
+    private String name;
     private Integer nivel;
     private BoardEntity board = new BoardEntity();
     @ToString.Exclude

@@ -76,16 +76,13 @@ public class BoardMenu {
             cardService.create(card);
             
             System.out.printf("Card '%s' criado na coluna %s!\n", 
-                card.getTitle(), targetColumn.getName().name());
+                card.getTitle(), targetColumn.getName());
         }
     }
     
     private BoardColumnEntity determineTargetColumn(BoardColumnService columnService, int existingCardsCount) throws SQLException {
-        if (existingCardsCount == 0) {
-            return columnService.findInitialColumn();
-        } else {
-            return columnService.findPendingColumn();
-        }
+        // Todo card novo sempre entra na coluna inicial do board
+        return columnService.findInitialColumnByBoardId(board.getId());
     }
     
     private CardEntity buildCard(BoardColumnEntity column) {

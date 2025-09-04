@@ -18,11 +18,15 @@ public class BoardEntity {
     private List<BoardColumnEntity> boardColumns = new ArrayList<>();
 
     public BoardColumnEntity getInitialColumn(){
-        return getFilteredColumn(bc -> bc.getName().equals(BoardColumnNameEnum.INITIALIZED));
+        return getFilteredColumn(bc -> bc.getType().equals(BoardColumnTypeEnum.INICIAL));
     }
 
     public BoardColumnEntity getCancelColumn(){
-        return getFilteredColumn(bc -> bc.getName().equals(BoardColumnNameEnum.CANCELLED));
+        return getFilteredColumn(bc -> bc.getType().equals(BoardColumnTypeEnum.CANCELAMENTO));
+    }
+    
+    public BoardColumnEntity getFinalColumn(){
+        return getFilteredColumn(bc -> bc.getType().equals(BoardColumnTypeEnum.FINAL));
     }
 
     private BoardColumnEntity getFilteredColumn(Predicate<BoardColumnEntity> filter){

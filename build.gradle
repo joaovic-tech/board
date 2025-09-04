@@ -28,5 +28,5 @@ test {
 }
 
 application {
-    mainClass = 'Main'
+    mainClass = 'tech.Main'
 }

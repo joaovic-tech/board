@@ -3,7 +3,7 @@ package tech.joaovic.service;
 import lombok.AllArgsConstructor;
 import tech.joaovic.persistence.dao.BoardDAO;
 import tech.joaovic.persistence.entity.BoardColumnEntity;
-import tech.joaovic.persistence.entity.BoardColumnNameEnum;
+import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 import tech.joaovic.persistence.entity.BoardEntity;
 
 import java.sql.Connection;
@@ -15,11 +15,11 @@ import java.util.Optional;
 public class BoardService {
     private final Connection connection;
 
-    public void create(final BoardEntity entity) throws SQLException {
+    public void create(final BoardEntity entity, List<String> pendingColumnNames) throws SQLException {
         BoardDAO boardDAO = new BoardDAO(connection);
         try {
             boardDAO.insert(entity);
-            ensureGlobalColumnsExist(entity);
+            createBoardColumns(entity, pendingColumnNames);
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
@@ -27,20 +27,38 @@ public class BoardService {
         }
     }
     
-    private void ensureGlobalColumnsExist(BoardEntity firstBoard) throws SQLException {
-        BoardColumnService columnService = new BoardColumnService(connection);
-        
-        if (!columnService.globalColumnsExist()) {
-            createGlobalColumn(columnService, firstBoard, BoardColumnNameEnum.INITIALIZED, 1);
-            createGlobalColumn(columnService, firstBoard, BoardColumnNameEnum.PENDING, 2);
-            createGlobalColumn(columnService, firstBoard, BoardColumnNameEnum.COMPLETED, 3);
-            createGlobalColumn(columnService, firstBoard, BoardColumnNameEnum.FINALIZED, 4);
-            createGlobalColumn(columnService, firstBoard, BoardColumnNameEnum.CANCELLED, 5);
-        }
+    public void create(final BoardEntity entity) throws SQLException {
+        // Método compatível com implementação atual - cria board com estrutura padrão
+        List<String> defaultPendingColumns = List.of("Em Andamento", "Concluída");
+        create(entity, defaultPendingColumns);
     }
     
-    private void createGlobalColumn(BoardColumnService service, BoardEntity board, BoardColumnNameEnum name, int nivel) throws SQLException {
+    /**
+     * Cria as colunas obrigatórias para um board específico
+     * Estrutura: INICIAL -> PENDENTEs... -> FINAL -> CANCELAMENTO
+     */
+    private void createBoardColumns(BoardEntity board, List<String> pendingColumnNames) throws SQLException {
+        BoardColumnService columnService = new BoardColumnService(connection);
+        int currentLevel = 1;
+        
+        // 1. Criar coluna INICIAL (sempre primeira)
+        createColumn(columnService, board, BoardColumnTypeEnum.INICIAL, "Inicial", currentLevel++);
+        
+        // 2. Criar colunas PENDENTE (podem ser várias)
+        for (String pendingName : pendingColumnNames) {
+            createColumn(columnService, board, BoardColumnTypeEnum.PENDENTE, pendingName, currentLevel++);
+        }
+        
+        // 3. Criar coluna FINAL (sempre penúltima)
+        createColumn(columnService, board, BoardColumnTypeEnum.FINAL, "Finalizada", currentLevel++);
+        
+        // 4. Criar coluna CANCELAMENTO (sempre última)
+        createColumn(columnService, board, BoardColumnTypeEnum.CANCELAMENTO, "Cancelada", currentLevel);
+    }
+    
+    private void createColumn(BoardColumnService service, BoardEntity board, BoardColumnTypeEnum type, String name, int nivel) throws SQLException {
         BoardColumnEntity column = new BoardColumnEntity();
+        column.setType(type);
         column.setName(name);
         column.setNivel(nivel);
         column.getBoard().setId(board.getId());

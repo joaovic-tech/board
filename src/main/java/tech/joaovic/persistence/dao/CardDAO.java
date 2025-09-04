@@ -13,12 +13,11 @@ public class CardDAO {
     private final Connection connection;
 
     public void insert(final CardEntity entity) throws SQLException {
-        var sql = "INSERT INTO CARDS (title, description, board_column_id, board_id) values (?, ?, ?, ?);";
+        var sql = "INSERT INTO CARDS (title, description, board_column_id) values (?, ?, ?);";
         try (var statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, entity.getTitle());
             statement.setString(2, entity.getDescription());
             statement.setLong(3, entity.getBoardColumn().getId());
-            statement.setLong(4, entity.getBoardColumn().getBoard().getId());
             statement.executeUpdate();
             
             try (var resultSet = statement.getGeneratedKeys()) {
@@ -30,7 +29,7 @@ public class CardDAO {
     }
     
     public int countCardsByBoardId(final Long boardId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM CARDS WHERE board_id = ?";
+        String sql = "SELECT COUNT(*) FROM CARDS c INNER JOIN BOARDS_COLUMN bc ON c.board_column_id = bc.id WHERE bc.board_id = ?";
         try (var statement = connection.prepareStatement(sql)) {
             statement.setLong(1, boardId);
             try (ResultSet resultSet = statement.executeQuery()) {

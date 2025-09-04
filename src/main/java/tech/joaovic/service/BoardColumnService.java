@@ -3,7 +3,7 @@ package tech.joaovic.service;
 import lombok.AllArgsConstructor;
 import tech.joaovic.persistence.dao.BoardColumnDAO;
 import tech.joaovic.persistence.entity.BoardColumnEntity;
-import tech.joaovic.persistence.entity.BoardColumnNameEnum;
+import tech.joaovic.persistence.entity.BoardColumnTypeEnum;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,45 +31,52 @@ public class BoardColumnService {
         dao.insert(entity);
     }
     
-    public boolean globalColumnsExist() throws SQLException {
+    /**
+     * Encontra a coluna inicial de um board específico
+     */
+    public BoardColumnEntity findInitialColumnByBoardId(final Long boardId) throws SQLException {
         BoardColumnDAO dao = new BoardColumnDAO(connection);
-        Long firstBoardId = getFirstBoardId();
-        if (firstBoardId == null) return false;
-        
-        List<BoardColumnEntity> columns = dao.findByBoardId(firstBoardId);
-        return columns.size() >= 5;
-    }
-    
-    public BoardColumnEntity findInitialColumn() throws SQLException {
-        BoardColumnDAO dao = new BoardColumnDAO(connection);
-        Long firstBoardId = getFirstBoardId();
-        List<BoardColumnEntity> columns = dao.findByBoardId(firstBoardId);
+        List<BoardColumnEntity> columns = dao.findByBoardId(boardId);
         return columns.stream()
-            .filter(col -> col.getName() == BoardColumnNameEnum.INITIALIZED)
+            .filter(col -> col.getType() == BoardColumnTypeEnum.INICIAL)
             .findFirst()
-            .orElseThrow(() -> new SQLException("Coluna inicial não encontrada"));
+            .orElseThrow(() -> new SQLException("Coluna inicial não encontrada para o board " + boardId));
     }
     
-    public BoardColumnEntity findPendingColumn() throws SQLException {
+    /**
+     * Encontra a primeira coluna pendente de um board específico
+     */
+    public BoardColumnEntity findFirstPendingColumnByBoardId(final Long boardId) throws SQLException {
         BoardColumnDAO dao = new BoardColumnDAO(connection);
-        Long firstBoardId = getFirstBoardId();
-        List<BoardColumnEntity> columns = dao.findByBoardId(firstBoardId);
+        List<BoardColumnEntity> columns = dao.findByBoardId(boardId);
         return columns.stream()
-            .filter(col -> col.getName() == BoardColumnNameEnum.PENDING)
+            .filter(col -> col.getType() == BoardColumnTypeEnum.PENDENTE)
             .findFirst()
-            .orElseThrow(() -> new SQLException("Coluna pendente não encontrada"));
+            .orElseThrow(() -> new SQLException("Coluna pendente não encontrada para o board " + boardId));
     }
     
-    private Long getFirstBoardId() throws SQLException {
-        String sql = "SELECT MIN(id) FROM BOARDS";
-        try (var statement = connection.prepareStatement(sql)) {
-            try (var resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getLong(1);
-                }
-                return null;
-            }
-        }
+    /**
+     * Encontra a coluna final de um board específico
+     */
+    public BoardColumnEntity findFinalColumnByBoardId(final Long boardId) throws SQLException {
+        BoardColumnDAO dao = new BoardColumnDAO(connection);
+        List<BoardColumnEntity> columns = dao.findByBoardId(boardId);
+        return columns.stream()
+            .filter(col -> col.getType() == BoardColumnTypeEnum.FINAL)
+            .findFirst()
+            .orElseThrow(() -> new SQLException("Coluna final não encontrada para o board " + boardId));
+    }
+    
+    /**
+     * Encontra a coluna de cancelamento de um board específico
+     */
+    public BoardColumnEntity findCancelColumnByBoardId(final Long boardId) throws SQLException {
+        BoardColumnDAO dao = new BoardColumnDAO(connection);
+        List<BoardColumnEntity> columns = dao.findByBoardId(boardId);
+        return columns.stream()
+            .filter(col -> col.getType() == BoardColumnTypeEnum.CANCELAMENTO)
+            .findFirst()
+            .orElseThrow(() -> new SQLException("Coluna de cancelamento não encontrada para o board " + boardId));
     }
 
     public List<BoardColumnEntity> findByBoardId(final Long boardId) throws SQLException {
