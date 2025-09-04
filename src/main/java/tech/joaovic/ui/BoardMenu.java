@@ -198,7 +198,7 @@ public class BoardMenu {
                 .toList();
             
             if (moveableCards.isEmpty()) {
-                System.out.println("\n❌ Nenhum card pode ser movido. Todos os cards estão em colunas finais.");
+                System.err.println("\n❌ Nenhum card pode ser movido. Todos os cards estão em colunas finais.");
                 return;
             }
             
@@ -216,7 +216,7 @@ public class BoardMenu {
             int cardChoice = scanner.nextInt() - 1;
             
             if (cardChoice < 0 || cardChoice >= moveableCards.size()) {
-                System.out.println("❌ Opção inválida!");
+                System.err.println("❌ Opção inválida!");
                 return;
             }
             
@@ -224,7 +224,7 @@ public class BoardMenu {
             
             // Verificar se o card está bloqueado
             if ("F".equals(selectedCard.getStatus())) {
-                System.out.println("❌ Este card está bloqueado e não pode ser movido!");
+                System.err.println("❌ Este card está bloqueado e não pode ser movido!");
                 return;
             }
             
@@ -233,7 +233,7 @@ public class BoardMenu {
                 board.getId(), selectedCard.getBoardColumn());
             
             if (validDestinations.isEmpty()) {
-                System.out.println("❌ Não há movimentos válidos para este card.");
+                System.err.println("❌ Não há movimentos válidos para este card.");
                 return;
             }
             
@@ -255,7 +255,7 @@ public class BoardMenu {
             int destChoice = scanner.nextInt() - 1;
             
             if (destChoice < 0 || destChoice >= validDestinations.size()) {
-                System.out.println("❌ Opção inválida!");
+                System.err.println("❌ Opção inválida!");
                 return;
             }
             
@@ -295,7 +295,7 @@ public class BoardMenu {
             int cardChoice = scanner.nextInt() - 1;
             
             if (cardChoice < 0 || cardChoice >= cards.size()) {
-                System.out.println("❌ Opção inválida!");
+                System.err.println("❌ Opção inválida!");
                 return;
             }
             
@@ -317,7 +317,7 @@ public class BoardMenu {
         String blockReason = scanner.nextLine();
         
         if (blockReason.trim().isEmpty()) {
-            System.out.println("❌ Motivo do bloqueio é obrigatório!");
+            System.err.println("❌ Motivo do bloqueio é obrigatório!");
             return;
         }
         
@@ -338,7 +338,7 @@ public class BoardMenu {
         String unblockReason = scanner.nextLine();
         
         if (unblockReason.trim().isEmpty()) {
-            System.out.println("❌ Motivo do desbloqueio é obrigatório!");
+            System.err.println("❌ Motivo do desbloqueio é obrigatório!");
             return;
         }
         
@@ -369,7 +369,7 @@ public class BoardMenu {
                 .toList();
             
             if (cancelableCards.isEmpty()) {
-                System.out.println("\n❌ Nenhum card pode ser cancelado. Cards finalizados ou já cancelados não podem ser cancelados.");
+                System.err.println("\n❌ Nenhum card pode ser cancelado. Cards finalizados ou já cancelados não podem ser cancelados.");
                 return;
             }
             
@@ -387,7 +387,7 @@ public class BoardMenu {
             int cardChoice = scanner.nextInt() - 1;
             
             if (cardChoice < 0 || cardChoice >= cancelableCards.size()) {
-                System.out.println("❌ Opção inválida!");
+                System.err.println("❌ Opção inválida!");
                 return;
             }
             
@@ -395,7 +395,7 @@ public class BoardMenu {
             
             // Verificar se o card está bloqueado
             if ("F".equals(selectedCard.getStatus())) {
-                System.out.println("❌ Este card está bloqueado e não pode ser cancelado!");
+                System.err.println("❌ Este card está bloqueado e não pode ser cancelado!");
                 return;
             }
             
@@ -405,7 +405,7 @@ public class BoardMenu {
             String confirmation = scanner.nextLine().toLowerCase();
             
             if (!"s".equals(confirmation) && !"sim".equals(confirmation)) {
-                System.out.println("❌ Cancelamento abortado pelo usuário.");
+                System.err.println("❌ Cancelamento abortado pelo usuário.");
                 return;
             }
             

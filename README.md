@@ -1,119 +1,231 @@
-# Documentação do projeto
+# Board - Sistema de Gerenciamento de Tarefas
 
-| Diagrama                             |
-|--------------------------------------|
-| ![Diagrama](./template/board_db.png) |
+Sistema de gerenciamento de tarefas tipo Kanban desenvolvido em Java para fins didáticos como parte do desafio da Digital Innovation One (DIO).
 
----
+## Descrição
 
-### Tipos e Ordem das Colunas (Regras da DIO)
-Os boards são compostos por 4 tipos de colunas: `Inicial`, `Pendente`, `Final` e `Cancelamento`.
-
-1.  **Coluna Inicial:** Apenas uma por board. É sempre a **primeira** coluna.
-2.  **Colunas Pendentes:** Pode haver várias. Ficam entre a coluna `Inicial` e `Final`. Exemplos: "Em Andamento", "Revisão", "Concluída".
-3.  **Coluna Final:** Apenas uma por board. É sempre a **penúltima** coluna.
-4.  **Coluna de Cancelamento:** Apenas uma por board. É sempre a **última** coluna.
+Aplicação de linha de comando que implementa um sistema completo de boards customizáveis para acompanhamento de tarefas. Utiliza arquitetura em camadas (DAO/Service/UI) com persistência em MySQL e controle de migração via Liquibase.
 
 ---
 
-### Ações de alterar card de coluna
-A movimentação de cards deve seguir a ordem das colunas no board, sem pular nenhuma etapa.
+## Especificações Técnicas
 
-**Exemplo de fluxo padrão:**
-`Inicial` -> `Pendente 1` -> `Pendente 2` -> `Final`
-
-**Exceção da Regra:**
-*   Um card pode ser movido para a coluna de **Cancelamento** a partir de **qualquer outra coluna**, exceto a coluna `Final`.
-
-> Atenção: Uma vez na coluna `Final` ou `Cancelamento`, o card não pode ser movido.
-
----
-
-### Relacionamentos
-1. BOARDS (1:n) BOARDS_COLUMN - Um board possui muitas colunas
-2. BOARDS_COLUMN (1:n) CARDS - Uma coluna possui muitos cards
-3. CARDS (1:n) BLOCKS - Um card pode ter muitos bloqueios/desbloqueios
+| Componente | Versão/Tecnologia |
+|------------|-------------------|
+| Java | OpenJDK 21 LTS |
+| Build Tool | Gradle 8.14 |
+| Database | MySQL 8.3.0 |
+| Migration | Liquibase 4.33.0 |
+| Container | Docker |
+| Architecture | Layered (DAO/Service/UI) |
 
 ---
 
-### Estrutura das Tabelas
+## Diagrama do Banco de Dados
 
-#### 1. BOARDS
-- **id**: `BIGINT AUTO_INCREMENT PRIMARY KEY`
-- **name**: `VARCHAR(255) NOT NULL` - Nome do board
-
-#### 2. BOARDS_COLUMN
-- **id**: `BIGINT AUTO_INCREMENT PRIMARY KEY`
-- **name**: `VARCHAR(255) NOT NULL` - Nome da coluna
-- **type**: `VARCHAR(50) NOT NULL` - Tipo da coluna ('Inicial', 'Pendente', 'Final', 'Cancelamento')
-- **nivel**: `INT NOT NULL` - Ordem/nível da coluna no board
-- **board_id**: `BIGINT NOT NULL` - Foreign Key para BOARDS
-
-#### 3. CARDS
-- **id**: `BIGINT AUTO_INCREMENT PRIMARY KEY`
-- **title**: `VARCHAR(255) NOT NULL` - Título do card
-- **description**: `VARCHAR(255) NOT NULL` - Descrição do card
-- **created_at**: `TIMESTAMP DEFAULT CURRENT_TIMESTAMP` - Data de criação
-- **moved_at**: `TIMESTAMP NULL` - Data da última movimentação
-- **status**: `CHAR(1)` - Status do card (T/F para ativo/bloqueado)
-- **board_column_id**: `BIGINT NOT NULL` - Foreign Key para BOARDS_COLUMN
-
-#### 4. BLOCKS
-- **id**: `BIGINT AUTO_INCREMENT PRIMARY KEY`
-- **block_reason**: `VARCHAR(255) NOT NULL` - Motivo do bloqueio
-- **blocked_at**: `TIMESTAMP DEFAULT CURRENT_TIMESTAMP` - Data do bloqueio
-- **unblocked_reason**: `VARCHAR(255) NOT NULL` - Motivo do desbloqueio
-- **unblock_at**: `TIMESTAMP NULL` - Data do desbloqueio
-- **card_id**: `BIGINT NOT NULL` - Foreign Key para CARDS
+| Schema ER - Modelo Relacional            |
+|------------------------------------------|
+| ![Schema](./demo/00_database_schema.png) |
 
 ---
 
-### Requisitos funcionais (sistema)
-1. O código deve iniciar disponibilizando um menu com as seguintes opções: Criar novo board, Selecionar board, Excluir boards, Sair.
-2. O código deve salvar o board com as suas informações no banco de dados MySQL.
-3. O código deve gerar um relatório do board selecionado com o tempo que cada tarefa demorou para ser concluída com informações do tempo que levou em cada coluna 
-4. O código dever gerar um relatório do board selecionado com o os bloqueios dos cards, com o tempo que ficaram bloqueados e com a justificativa dos bloqueios e desbloqueios.
+## Screenshots do Sistema
+
+### Operações Principais
+
+| Função               | Tela                                            |
+|----------------------|-------------------------------------------------|
+| **Criar Board**      | ![Board Creation](./demo/01_board_creation.png) |
+| **Criar Card**       | ![Card Creation](./demo/02_card_creation.png)   |
+| **Visualizar Board** | ![Board View](./demo/03_board_view.png)         |
+
+### Relatórios do Sistema
+
+| Relatório                     | Output                                              |
+|-------------------------------|-----------------------------------------------------|
+| **Histórico de Bloqueios**    | ![Blocks Report](./demo/04_blocks_report.png)       |
+| **Movimentações de Cards**    | ![Movements Report](./demo/05_movements_report.png) |
+| **Tempo de Vida das Tarefas** | ![Lifetime Report](./demo/06_lifetime_report.png)   |
+---
+
+## Funcionalidades do Sistema
+
+### Menu Principal
+- [x] Criar novo board
+- [x] Selecionar board existente  
+- [x] Excluir board
+- [x] Sair do sistema
+
+### Menu do Board
+- [x] Criar card
+- [x] Listar cards por coluna
+- [x] Mover card entre colunas
+- [x] Bloquear/Desbloquear card
+- [x] Cancelar card
+- [x] Relatório de bloqueios
+- [x] Relatório de movimentações
+- [x] Relatório de tempo de vida
+
+### Regras de Negócio
+- [x] Estrutura obrigatória: INICIAL → PENDENTE(s) → FINAL → CANCELAMENTO
+- [x] Navegação sequencial entre colunas (exceto cancelamento)
+- [x] Cards bloqueados não podem ser movidos
+- [x] Histórico completo de movimentações
+- [x] Controle de bloqueios com motivos
 
 ---
 
-### Requisitos Não funcionais
-1. Cada *Board* terá somente uma coluna do tipo *inicializada*.
-2. Se um *Card* estiver marcado como bloqueado ele não pode ser movido até ser desbloqueado.
-3. Um card deve navegar nas colunas seguindo a ordem delas no board, sem pular nenhuma etapa, exceto pela coluna de cards cancelados que pode receber cards diretamente de qualquer coluna que não for a coluna final.
-4. Um card deve armazenar a data e hora em que foi colocado numa coluna e a data e hora que foi movido para a próxima coluna;
+## Requisitos do Sistema
+
+### Software Necessário
+```
+Java 21+ (OpenJDK recomendado)
+Docker e Docker Compose
+Git
+```
+
+### Verificação de Versões
+```bash
+java -version    # deve ser 21+
+docker --version
+git --version
+```
 
 ---
 
-# Instrucoes da dio
+## Como Executar
 
-## Regras dos boards
-    1 - Um board deve ter um nome e ser composto por pelo menos 3 colunas ( coluna onde o card é colocado inicialmente, coluna para cards com tarefas concluídas e coluna para cards cancelados, a nomenclatura das colunas é de escolha livre);
-    2 - As colunas tem seu respectivo nome, ordem que aparece no board e seu tipo (Inicial, cancelamento, final e pendente);
-    3 - Cada board só pode ter 1 coluna do tipo inicial, cancelamento e final, colunas do tipo pendente podem ter quantas forem necessárias, obrigatoriamente a coluna inicial deve ser a primeira coluna do board, a final deve ser a penúltima e a de cancelamento deve ser a última
-    4 - As colunas podem ter 0 ou N cards, cada card tem o seu título, descrição, data de criação e se está bloqueado;
-    5 - Um card deve navegar nas colunas seguindo a ordem delas no board, sem pular nenhuma etapa, exceto pela coluna de cards cancelados que pode receber cards diretamente de qualquer coluna que não for a coluna final;
-    6 - Se um card estiver marcado como bloqueado ele não pode ser movido até ser desbloqueado
-    7 - Para bloquear um card deve-se informar o motivo de seu bloqueio e para desbloquea-lo deve-se também informar o motivo# Projeto de board para gerenciamento de tarefas
+### 1. Clonar o Repositório
+```bash
+git clone [URL_DO_REPOSITORIO]
+cd board
+```
 
-Escreva um código que irá criar um board customizável para acompanhamento de tarefas
+### 2. Iniciar o Banco de Dados
+```bash
+docker compose -f docker-compose-mysql.yml up -d
+```
 
-## Requisitos
-    1 - O código deve iniciar disponibilizando um menu com as seguintes opções: Criar novo board, Selecionar board, Excluir boards, Sair;
-    2 - O código deve salvar o board com suas informações no banco de dados MySQL;
+### 3. Compilar a Aplicação
+```bash
+./gradlew build
+```
 
-## Regras dos boards
-    1 - Um board deve ter um nome e ser composto por pelo menos 3 colunas ( coluna onde o card é colocado inicialmente, coluna para cards com tarefas concluídas e coluna para cards cancelados, a nomenclatura das colunas é de escolha livre);
-    2 - As colunas tem seu respectivo nome, ordem que aparece no board e seu tipo (Inicial, cancelamento, final e pendente);
-    3 - Cada board só pode ter 1 coluna do tipo inicial, cancelamento e final, colunas do tipo pendente podem ter quantas forem necessárias, obrigatoriamente a coluna inicial deve ser a primeira coluna do board, a final deve ser a penúltima e a de cancelamento deve ser a última
-    4 - As colunas podem ter 0 ou N cards, cada card tem o seu título, descrição, data de criação e se está bloqueado;
-    5 - Um card deve navegar nas colunas seguindo a ordem delas no board, sem pular nenhuma etapa, exceto pela coluna de cards cancelados que pode receber cards diretamente de qualquer coluna que não for a coluna final;
-    6 - Se um card estiver marcado como bloqueado ele não pode ser movido até ser desbloqueado
-    7 - Para bloquear um card deve-se informar o motivo de seu bloqueio e para desbloquea-lo deve-se também informar o motivo
+### 4. Executar o Sistema
+```bash
+./gradlew run
+```
 
-## Menu de manipulação de board selecionado
-    1 - O menu deve permitir mover o card para próxima coluna, cancelar um card, criar um card, bloquea-lo, desbloquea-lo e fechar board;
+### 5. Parar o Banco (quando terminar)
+```bash
+docker compose -f docker-compose-mysql.yml down
+```
 
-## Requisitos opcionais
-    1 - Um card deve armazenar a data e hora em que foi colocado em uma coluna e a data e hora que foi movido pra a próxima coluna;
-    2 - O código deve gerar um relatório do board selecionado com o tempo que cada tarefa demorou para ser concluída com informações do tempo que levou em cada coluna
-    3 - O código dever gerar um relatório do board selecionado com o os bloqueios dos cards, com o tempo que ficaram bloqueados e com a justificativa dos bloqueios e desbloqueios.
+---
+
+## Estrutura do Projeto
+
+```
+src/main/java/tech/
+├── Main.java                          # Ponto de entrada
+├── joaovic/
+│   ├── persistence/
+│   │   ├── config/
+│   │   │   └── ConnectionConfig.java   # Configuração do banco
+│   │   ├── dao/                       # Data Access Objects
+│   │   ├── entity/                    # Entidades JPA
+│   │   └── migration/                 # Estratégia de migração
+│   ├── service/                       # Lógica de negócio
+│   └── ui/                           # Interface do usuário
+└── resources/
+    └── db/changelog/                  # Scripts Liquibase
+```
+
+---
+
+## Modelo de Dados
+
+### Tabelas Principais
+
+| Tabela | Descrição | Relacionamento |
+|--------|-----------|----------------|
+| `BOARDS` | Boards do sistema | 1:N com BOARDS_COLUMN |
+| `BOARDS_COLUMN` | Colunas dos boards | 1:N com CARDS |
+| `CARDS` | Cards/tarefas | 1:N com BLOCKS |
+| `BLOCKS` | Histórico de bloqueios | N:1 com CARDS |
+| `CARD_MOVEMENTS` | Histórico de movimentações | N:1 com CARDS |
+
+### Tipos de Coluna
+```
+INICIAL      - Coluna onde cards são criados (única)
+PENDENTE     - Colunas de trabalho (múltiplas permitidas)
+FINAL        - Coluna de conclusão (única)
+CANCELAMENTO - Coluna de cancelamento (única)
+```
+
+---
+
+## Configuração
+
+### Arquivo .env
+```env
+DB_URL=jdbc:mysql://localhost:3306/board_db
+DB_USER=board_user
+DB_PASSWORD=board_user_password
+MYSQL_PORT=3306
+```
+
+### Conectividade
+- **MySQL**: localhost:3306
+- **Database**: board_db
+- **Charset**: UTF-8
+
+---
+
+## Comandos Úteis
+
+### Desenvolvimento
+```bash
+# Compilar apenas
+./gradlew compileJava
+
+# Executar testes
+./gradlew test
+
+# Limpar build
+./gradlew clean
+```
+
+### Banco de Dados
+```bash
+# Conectar ao MySQL via Docker
+docker exec -it board-db mysql -u board_user -p board_db
+
+# Ver logs do container
+docker logs board-db
+
+# Status dos containers
+docker ps
+```
+
+---
+
+## Status do Projeto
+
+**Versão:** 1.0-SNAPSHOT  
+**Status:** Completo ✅  
+**Propósito:** Educacional (DIO)  
+
+### Funcionalidades Implementadas
+- ✅ CRUD completo de boards e cards
+- ✅ Sistema de bloqueio com histórico
+- ✅ Relatórios detalhados
+- ✅ Migração automatizada do banco
+- ✅ Arquitetura em camadas
+- ✅ Validação de regras de negócio
+
+---
+
+## Autor
+
+Desenvolvido por [João Victor 🥷](https://github.com/joaovic-tech/) para o desafio da Digital Innovation One (DIO)

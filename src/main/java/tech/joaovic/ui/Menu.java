@@ -69,7 +69,7 @@ public class Menu {
         String confirmation = scanner.nextLine().toLowerCase();
         
         if (!"s".equals(confirmation) && !"sim".equals(confirmation)) {
-            System.out.println("❌ Criação do board cancelada.");
+            System.err.println("❌ Criação do board cancelada.");
             return;
         }
 
@@ -96,7 +96,7 @@ public class Menu {
             scanner.nextLine(); // limpar buffer
             
             if (numPendingColumns < 1 || numPendingColumns > 8) {
-                System.out.println("❌ Número inválido! Deve estar entre 1 e 8.");
+                System.err.println("❌ Número inválido! Deve estar entre 1 e 8.");
             }
         } while (numPendingColumns < 1 || numPendingColumns > 8);
         
@@ -109,12 +109,12 @@ public class Menu {
                 columnName = scanner.nextLine().trim();
                 
                 if (columnName.isEmpty()) {
-                    System.out.println("   ❌ Nome não pode estar vazio!");
+                    System.err.println("   ❌ Nome não pode estar vazio!");
                     continue;
                 }
                 
                 if (usedNames.contains(columnName.toLowerCase())) {
-                    System.out.println("   ❌ Nome já utilizado! Escolha um nome diferente.");
+                    System.err.println("   ❌ Nome já utilizado! Escolha um nome diferente.");
                     continue;
                 }
                 
@@ -122,7 +122,7 @@ public class Menu {
                 String lowerName = columnName.toLowerCase();
                 if (lowerName.equals("inicial") || lowerName.equals("finalizada") || 
                     lowerName.equals("cancelada") || lowerName.equals("cancelamento")) {
-                    System.out.println("   ❌ Nome reservado! Use um nome diferente.");
+                    System.err.println("   ❌ Nome reservado! Use um nome diferente.");
                     continue;
                 }
                 
